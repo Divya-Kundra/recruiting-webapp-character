@@ -49,12 +49,11 @@
   display: flex;
   justify-content: center;
   gap: 30px;
+  margin: 20px;
 }
 
 
 .container {
-  /* display: flex;
-  flex-direction: column; */
   border: 2px solid white;
   border-radius: 10px;
   padding: 30px;
@@ -63,4 +62,18 @@
 .red-color-text {
   color: red;
   font-size: 600;
+}
+
+.wider-box {
+  flex-grow: 1
+}
+
+.skills-subheadline {
+  margin-bottom: 40px;
+}
+
+.flex-row {
+  display: flex;
+  align-items: center;
+  
 }
