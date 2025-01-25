@@ -44,3 +44,23 @@
     transform: rotate(360deg);
   }
 }
+
+.container-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+
+.container {
+  /* display: flex;
+  flex-direction: column; */
+  border: 2px solid white;
+  border-radius: 10px;
+  padding: 30px;
+}
+
+.red-color-text {
+  color: red;
+  font-size: 600;
+}
