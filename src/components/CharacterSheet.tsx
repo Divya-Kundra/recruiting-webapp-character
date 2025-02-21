@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react';
 import { ATTRIBUTE_LIST, CLASS_LIST, SKILL_LIST } from '../consts';
 
 const CharacterSheet = ({ charName }) => {
-
   const MAX_ATTRIBUTE_SUM = 70
   type CharacterState = {
     attributes: Array<{
-      name: string; // Changed from String to string
+      name: string;
       score: number;
       abilityModifier: number;
     }>;
     classArr: Array<{
       name: string;
-      isQualified: boolean; // Changed from Boolean to boolean
+      isQualified: boolean;
     }>;
     skills: Array<{
       name: string;
@@ -201,7 +200,6 @@ const CharacterSheet = ({ charName }) => {
   }
 
   const attributeMinusBtnClick = (index: number) => {
-
     //update attribute value
     setState((prev) => ({
       ...prev,
@@ -249,7 +247,7 @@ const CharacterSheet = ({ charName }) => {
 
   const totalSkillPoints = () => {
     const intelligentModifier = state.attributes.find((attr) => attr.name === 'Intelligence')?.abilityModifier
-    if (intelligentModifier < 0) return 0
+    if (intelligentModifier < 0) return 10
     return 10 + (4 * intelligentModifier)
   }
 
@@ -270,7 +268,7 @@ const CharacterSheet = ({ charName }) => {
     })
   }
 
-  return (<>
+  return (<div data-testid="character-sheet">
     <h2>Character {charName}</h2>
     <div>
       <div className='container'>
@@ -299,11 +297,10 @@ const CharacterSheet = ({ charName }) => {
         <h2>Attributes</h2>
         {
           state.attributes.length && state.attributes.map((attribute, index) => <div key={index}>
-            <p>{attribute.name} : {attribute.score}  &#40; Modifier: {attribute.abilityModifier}  &#41;
+            <p> <span data-testid={`attribute-${attribute.name}`}>{attribute.name}</span> : <span data-testid={`attribute-score-${index}`}>{attribute.score} </span> &#40; Modifier: <span data-testid={`attribute-modifier-${index}`}>{attribute.abilityModifier}</span>  &#41;
             </p>
-            <button onClick={() => attributeMinusBtnClick(index)}>-</button>
-            <button onClick={() => attributePlusBtnClick(index)}>+</button>
-
+            <button data-testid={`subtract-attribute-${index}`} onClick={() => attributeMinusBtnClick(index)}>-</button>
+            <button data-testid={`add-attribute-${index}`} onClick={() => attributePlusBtnClick(index)}>+</button>
           </div>)
         }
       </div>
@@ -338,7 +335,7 @@ const CharacterSheet = ({ charName }) => {
         <p className='skills-subheadline'>Total Skill points available are {totalSkillPoints()}</p>
         {
           state.skills.length && state.skills.map((skill, index) => <div key={index} className='flex-row'>
-            <p>{skill.name}: {skill.spentScore} &#40; Modifier: {skill.attributeModifier}  &#41; :{skill.modifierScore}&nbsp;</p>
+            <p>{skill.name}: {skill.spentScore} &#40; Modifier:  <span data-testid={`skill-modifier-name-${skill.attributeModifier}`}>{skill.attributeModifier} </span>&#41; : <span data-testid={`skill-modifier-value-${index}`}>{skill.modifierScore}&nbsp;</span></p>
             <span><button onClick={() => decreaseSkillScore(index)}>-</button></span>
             <span><button onClick={() => increaseSkillScore(index)}>+</button></span>
             <p>&nbsp;total: {skill.total}</p>
@@ -347,7 +344,7 @@ const CharacterSheet = ({ charName }) => {
         }
       </div>
     </div>
-  </>)
+  </div >)
 }
 
 
