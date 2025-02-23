@@ -1,115 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ATTRIBUTE_LIST, CLASS_LIST, SKILL_LIST } from '../consts';
+import { computeAbilityModifier } from '../util';
+const MAX_ATTRIBUTE_SUM = 70
 
 const CharacterSheet = ({ charName }) => {
-  const MAX_ATTRIBUTE_SUM = 70
-  type CharacterState = {
-    attributes: Array<{
-      name: string;
-      score: number;
-      abilityModifier: number;
-    }>;
-    classArr: Array<{
-      name: string;
-      isQualified: boolean;
-    }>;
-    skills: Array<{
-      name: string;
-      attributeModifier: string;
-      spentScore: number;
-      total: number;
-      modifierScore: number;
-    }>;
-  };
   const setInitialState = () => {
-    const stateObj: {
-      attributes: Array<{
-        name: string,
-        score: number,
-        abilityModifier: number
-      }>,
-      classArr: Array<{
-        name: string,
-        isQualified: boolean
-      }>,
-      skills: Array<{
-        name: string,
-        attributeModifier: string,
-        spentScore: number,
-        total: number,
-        modifierScore: number
-      }>
-    } = {
-      attributes: [],
-      classArr: [],
-      skills: []
-    }
-
-    const initialAttributeArray: Array<{
-      name: string,
-      score: number,
-      abilityModifier: number
-    }> = []
-
-    for (let i = 0; i < ATTRIBUTE_LIST.length; i++) {
-      initialAttributeArray.push({
-        name: ATTRIBUTE_LIST[i],
+    return {
+      attributes: ATTRIBUTE_LIST.map((attributeName) => ({
+        name: attributeName,
         score: 0,
         abilityModifier: 0
-      })
-    }
+      })),
 
-    stateObj.attributes = initialAttributeArray
-
-
-    const initialClassArr: Array<{
-      name: string,
-      isQualified: boolean
-    }> = []
-
-    for (let character in CLASS_LIST) {
-      initialClassArr.push({
-        name: character,
+      classArr: Object.keys(CLASS_LIST).map((characterName) => ({
+        name: characterName,
         isQualified: false
-      })
-    }
-    stateObj.classArr = initialClassArr
+      })),
 
-
-    const initialSkillsArr: Array<{
-      name: string,
-      attributeModifier: string,
-      spentScore: number,
-      total: number,
-      modifierScore: number
-    }> = []
-    for (let i = 0; i < SKILL_LIST.length; i++) {
-      initialSkillsArr.push({
-        name: SKILL_LIST[i].name,
-        attributeModifier: SKILL_LIST[i].attributeModifier,
+      skills: SKILL_LIST.map(skill => ({
+        name: skill.name,
+        attributeModifier: skill.attributeModifier,
         spentScore: 0,
         total: 0,
-        modifierScore: initialAttributeArray.find((attr) => attr.name === SKILL_LIST[i].attributeModifier)?.abilityModifier
-      })
+        modifierScore: 0
+      }))
     }
-
-    stateObj.skills = initialSkillsArr
-    return stateObj
   }
-
+  const setInitialSkillCheck = () => {
+    return {
+      choosenSkill: '',
+      skillScore: 0,
+      diceRoll: 0,
+      dc: 0,
+      result: 'failure'
+    }
+  }
   const [state, setState] = useState(setInitialState())
   const [minRequirement, setMinRequirement] = useState({})
-  const [chosenSkill, setChosenSkill] = useState({
-    name: '',
-    score: 0
-  })
-  const [diceRoll, setDiceRoll] = useState(0)
-  const [dc, setDc] = useState(0)
-  const [result, setResult] = useState('failure')
+  const [skillCheck, setSkillCheck] = useState(setInitialSkillCheck)
 
   const increaseSkillScore = (index: number) => {
     const sum = state.skills.reduce((acc, skill) => acc + skill.spentScore, 0)
-    if (sum < totalSkillPoints()) {
+
+    if (sum < totalSkillPoints) {
       setState((prev) => ({
         ...prev,
         skills: prev.skills.map((skill, i) => {
@@ -122,7 +55,6 @@ const CharacterSheet = ({ charName }) => {
           }
         })
       }))
-
     } else {
       alert('You need more skill points ! Upgrade your intelligence to get more')
     }
@@ -143,21 +75,12 @@ const CharacterSheet = ({ charName }) => {
     }))
   }
 
-
-  const computeAbilityModifier = (score: number) => {
-    const rem = (score - 10)
-    const modifierScore = Math.floor(rem / 2)
-    return modifierScore
-  }
-
   const attributePlusBtnClick = (index: number) => {
     const sum = state.attributes.reduce((acc, attr) => acc + attr.score, 0)
 
     if (sum < MAX_ATTRIBUTE_SUM) {
-      // update attribute value
-      setState((prev) => ({
-        ...prev,
-        attributes: state.attributes.map((attribute, i) => {
+      setState((prev) => {
+        const newAttributes = prev.attributes.map((attribute, i) => {
           if (i === index) {
             return {
               ...attribute, score: attribute.score + 1,
@@ -167,33 +90,28 @@ const CharacterSheet = ({ charName }) => {
             return attribute
           }
         })
-      }))
 
-      // check qualified class
-      setState((prev) => ({
-        ...prev,
-        classArr: prev.classArr.map((classObj) => {
-          const isQualified = Object.entries(CLASS_LIST[classObj.name]).every(([attribute, requiredScore]) => {
-            const findAttr = prev.attributes.find((att) => att.name === attribute);
-            return findAttr && findAttr.score >= requiredScore
-          });
+        //update newClassArr
+        const newClassArr = prev.classArr.map((classObj) => {
+          const isQualified = Object.entries(CLASS_LIST[classObj.name]).every(
+            ([attribute, requiredScore]) => {
+              const findAttr = newAttributes.find((att) => att.name === attribute);
+              return findAttr && findAttr.score >= requiredScore;
+            }
+          );
           return { ...classObj, isQualified };
-        })
-      }))
+        });
 
-      // update skill
-      setState((prev) => ({
-        ...prev,
-        skills: prev.skills.map((skill) => {
-          const attribute = prev.attributes.find((attr) => attr.name === skill.attributeModifier)
-          const modifierScore = attribute ? attribute.abilityModifier : 0
-          return {
-            ...skill,
-            modifierScore,
-            total: skill.spentScore + modifierScore
-          }
-        })
-      }))
+        // Update skills
+        const newSkills = prev.skills.map((skill) => {
+          const attribute = newAttributes.find((attr) => attr.name === skill.attributeModifier);
+          const modifierScore = attribute ? attribute.abilityModifier : 0;
+          return { ...skill, modifierScore, total: skill.spentScore + modifierScore };
+        });
+
+        return { ...prev, attributes: newAttributes, classArr: newClassArr, skills: newSkills }
+
+      })
     } else {
       alert('You exceeded maximum of 70 attributes, decrease one before you can increase')
     }
@@ -245,27 +163,30 @@ const CharacterSheet = ({ charName }) => {
     })
   }
 
-  const totalSkillPoints = () => {
-    const intelligentModifier = state.attributes.find((attr) => attr.name === 'Intelligence')?.abilityModifier
-    if (intelligentModifier < 0) return 10
-    return 10 + (4 * intelligentModifier)
-  }
+  const totalSkillPoints: number = useMemo<number>(() => {
+    const intelligenceAttr = state.attributes?.find((attr) => attr.name === 'Intelligence') || { abilityModifier: 0 };
+    const intelligentModifier: number = intelligenceAttr.abilityModifier ?? 0;
+    return intelligentModifier < 0 ? 10 : 10 + 4 * intelligentModifier;
+  }, [state.attributes]);
 
-  const rollDice = () => {
+  const rollDice = useCallback(() => {
     const random = Math.floor(Math.random() * 20) + 1;
-    setDiceRoll(random)
-    if (random + chosenSkill.score >= dc) {
-      setResult('Success')
-    } else {
-      setResult('Failure')
-    }
-  }
+    setSkillCheck((prev) => (
+      {
+        ...prev,
+        diceRoll: random,
+        result: random + prev.skillScore >= prev.dc ? 'Success' : 'Failure'
+      }))
+
+  }, [skillCheck])
 
   const updateSkill = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setChosenSkill({
-      name: e.target.value,
-      score: state.skills.find((skill) => skill.name === e.target.value).total
-    })
+    setSkillCheck((prev) => (
+      {
+        ...prev,
+        skillScore: state.skills.find((skill) => skill.name === e.target.value).total,
+        choosenSkill: e.target.value,
+      }))
   }
 
   return (<div data-testid="character-sheet">
@@ -273,10 +194,10 @@ const CharacterSheet = ({ charName }) => {
     <div>
       <div className='container'>
         <h3>Skill Check Results</h3>
-        <p> Skill: {chosenSkill.name} : {chosenSkill.score}</p>
-        <p>You Rolled: {diceRoll}</p>
-        <p>The DC was: {dc} </p>
-        <p>Result: {result}</p>
+        <p> Skill: {skillCheck.choosenSkill} : {skillCheck.skillScore}</p>
+        <p>You Rolled: {skillCheck.diceRoll}</p>
+        <p>The DC was: {skillCheck.dc} </p>
+        <p>Result: {skillCheck.result}</p>
       </div>
       <div className='container'>
         <h3>Skill Check</h3>
@@ -288,7 +209,13 @@ const CharacterSheet = ({ charName }) => {
           }
         </select>
         <label htmlFor="dc"> DC </label>
-        <input type="number" id="dc" onChange={(e) => setDc(parseInt(e.target.value))}></input>
+        <input type="number" id="dc"
+          onChange={(e) => setSkillCheck(prev => ({
+            ...prev,
+            dc: parseInt(e.target.value)
+          }))}>
+
+        </input>
         <button onClick={rollDice}>Roll</button>
       </div>
     </div>
@@ -297,17 +224,17 @@ const CharacterSheet = ({ charName }) => {
         <h2>Attributes</h2>
         {
           state.attributes.length && state.attributes.map((attribute, index) => <div key={index}>
-            <p> <span data-testid={`attribute-${attribute.name}`}>{attribute.name}</span> : <span data-testid={`attribute-score-${index}`}>{attribute.score} </span> &#40; Modifier: <span data-testid={`attribute-modifier-${index}`}>{attribute.abilityModifier}</span>  &#41;
+            <p> <span data-testid={`attribute-${attribute.name}`}>{attribute.name}</span> : <span data-testid={`attribute-score-for-${attribute.name}`}>{attribute.score} </span> &#40; Modifier: <span data-testid={`attribute-modifier-for-${attribute.name}`}>{attribute.abilityModifier}</span>  &#41;
             </p>
-            <button data-testid={`subtract-attribute-${index}`} onClick={() => attributeMinusBtnClick(index)}>-</button>
-            <button data-testid={`add-attribute-${index}`} onClick={() => attributePlusBtnClick(index)}>+</button>
+            <button data-testid={`subtract-attribute-btn-${attribute.name}`} onClick={() => attributeMinusBtnClick(index)}>-</button>
+            <button data-testid={`add-attribute-btn-${attribute.name}`} onClick={() => attributePlusBtnClick(index)}>+</button>
           </div>)
         }
       </div>
       <div className='container'>
         <h3>Classes</h3>
         {
-          state.classArr.length && state.classArr.map((character, index) =>
+          state.classArr.map((character, index) =>
             <div key={index}>
               <p className={character.isQualified === true ? 'red-color-text' : 'black-color-text'}
                 onClick={() => showMinRequirement(character.name)}>{character.name}</p>
@@ -332,10 +259,10 @@ const CharacterSheet = ({ charName }) => {
       }
       <div className='container wider-box'>
         <h3>Skills</h3>
-        <p className='skills-subheadline'>Total Skill points available are {totalSkillPoints()}</p>
+        <p className='skills-subheadline'>Total Skill points available are {totalSkillPoints}</p>
         {
-          state.skills.length && state.skills.map((skill, index) => <div key={index} className='flex-row'>
-            <p>{skill.name}: {skill.spentScore} &#40; Modifier:  <span data-testid={`skill-modifier-name-${skill.attributeModifier}`}>{skill.attributeModifier} </span>&#41; : <span data-testid={`skill-modifier-value-${index}`}>{skill.modifierScore}&nbsp;</span></p>
+          state.skills.map((skill, index) => <div key={index} className='flex-row'>
+            <p>{skill.name}: {skill.spentScore} &#40; Modifier:  <span data-testid={`skill-modifier-name-${skill.attributeModifier}`}>{skill.attributeModifier} </span>&#41; : <span data-testid={`skill-modifier-score-${skill.attributeModifier}`}>{skill.modifierScore}&nbsp;</span></p>
             <span><button onClick={() => decreaseSkillScore(index)}>-</button></span>
             <span><button onClick={() => increaseSkillScore(index)}>+</button></span>
             <p>&nbsp;total: {skill.total}</p>
@@ -346,6 +273,4 @@ const CharacterSheet = ({ charName }) => {
     </div>
   </div >)
 }
-
-
 export default CharacterSheet

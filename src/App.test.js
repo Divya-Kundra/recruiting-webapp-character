@@ -17,44 +17,43 @@ test('Check +/- button on attribute', () => {
 
 
   // check clicking on plus increase  attribute and modifier score
-  expect(screen.getByTestId('attribute-score-0')).toHaveTextContent(0);
-  expect(screen.getByTestId('attribute-modifier-0')).toHaveTextContent(0);
+  expect(screen.getByTestId('attribute-score-for-Strength')).toHaveTextContent(0);
+  expect(screen.getByTestId('attribute-modifier-for-Strength')).toHaveTextContent(0);
 
 
-  const button = screen.getByTestId('add-attribute-0')
+  const button = screen.getByTestId('add-attribute-btn-Strength')
 
   fireEvent.click(button)
 
-  expect(screen.getByTestId('attribute-score-0')).toHaveTextContent(1)
-  expect(screen.getByTestId('attribute-modifier-0')).toHaveTextContent(-5);
+  expect(screen.getByTestId('attribute-score-for-Strength')).toHaveTextContent(1)
+  expect(screen.getByTestId('attribute-modifier-for-Strength')).toHaveTextContent(-5);
 
 
   // check clicking on - decrease  score
+  const minusBtn = screen.getByTestId('subtract-attribute-btn-Strength')
+  fireEvent.click(minusBtn)
 
-  const minusBtn = screen.getByTestId('subtract-attribute-0')
+  expect(screen.getByTestId('attribute-score-for-Strength')).toHaveTextContent(0)
 
   fireEvent.click(minusBtn)
 
-  expect(screen.getByTestId('attribute-score-0')).toHaveTextContent(0)
-
-  fireEvent.click(minusBtn)
-
-  expect(screen.getByTestId('attribute-score-0')).toHaveTextContent(-1)
-  expect(screen.getByTestId('attribute-modifier-0')).toHaveTextContent(-6);
-
-  //check attribute modifier score is updated accordingly
+  expect(screen.getByTestId('attribute-score-for-Strength')).toHaveTextContent(-1)
+  expect(screen.getByTestId('attribute-modifier-for-Strength')).toHaveTextContent(-6);
 
 })
 
 test('check +/- of attribute update skill modifiers accordingly', () => {
   render(<App />);
 
-  expect(screen.getByTestId('attribute-score-0')).toHaveTextContent(0);
-
-
-  const button = screen.getByTestId('add-attribute-0')
-
+  expect(screen.getByTestId('attribute-score-for-Strength')).toHaveTextContent(0);
+  expect(screen.getByTestId('attribute-modifier-for-Strength')).toHaveTextContent(0);
+  const button = screen.getByTestId('add-attribute-btn-Strength')
   fireEvent.click(button)
-  fireEvent.click(button)
+  expect(screen.getByTestId('attribute-modifier-for-Strength')).toHaveTextContent(-5);
+
+  expect(screen.getByTestId('skill-modifier-score-Strength')).toHaveTextContent(-5)
+
+  expect(screen.getByTestId('skill-modifier-score-Strength')).toEqual(screen.getByTestId('skill-modifier-score-Strength'))
+
 
 })
